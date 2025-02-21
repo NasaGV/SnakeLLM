@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game with Linked List</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="snakeCanvas" width="400" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('snakeCanvas');
+        const ctx = canvas.getContext('2d');
+        const box = 20;
+
+        // Definir la clase Node para cada segmento de la serpiente
+        class Node {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.next = null;
+            }
+        }
+
+        // Definir la clase LinkedList para manejar la serpiente
+        class LinkedList {
+            constructor() {
+                this.head = null;
+                this.tail = null;
+                this.length = 0;
+            }
+
+            addHead(x, y) {
+                const newNode = new Node(x, y);
+                if (!this.head) {
+                    this.head = newNode;
+                    this.tail = newNode;
+                } else {
+                    newNode.next = this.head;
+                    this.head = newNode;
+                }
+                this.length++;
+            }
+
+            removeTail() {
+                if (!this.head) return null;
+                let current = this.head;
+                let newTail = current;
+                while (current.next) {
+                    newTail = current;
+                    current = current.next;
+                }
+                this.tail = newTail;
+                this.tail.next = null;
+                this.length--;
+                if (this.length === 0) {
+                    this.head = null;
+                    this.tail = null;
+                }
+                return current;
+            }
+
+            toArray() {
+                const array = [];
+                let current = this.head;
+                while (current) {
+                    array.push({ x: current.x, y: current.y });
+                    current = current.next;
+                }
+                return array;
+            }
+        }
+
+        let snake = new LinkedList();
+        snake.addHead(9 * box, 9 * box);
+
+        let direction = 'RIGHT';
+        let food = {
+            x: Math.floor(Math.random() * 20) * box,
+            y: Math.floor(Math.random() * 20) * box
+        };
+
+        document.addEventListener('keydown', directionControl);
+
+        function directionControl(event) {
+            if (event.keyCode === 37 && direction !== 'RIGHT') direction = 'LEFT';
+            if (event.keyCode === 38 && direction !== 'DOWN') direction = 'UP';
+            if (event.keyCode === 39 && direction !== 'LEFT') direction = 'RIGHT';
+            if (event.keyCode === 40 && direction !== 'UP') direction = 'DOWN';
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar la serpiente
+            let current = snake.head;
+            let i = 0;
+            while (current) {
+                ctx.fillStyle = (i === 0) ? 'green' : 'lightgreen';
+                ctx.fillRect(current.x, current.y, box, box);
+                ctx.strokeStyle = 'darkgreen';
+                ctx.strokeRect(current.x, current.y, box, box);
+                current = current.next;
+                i++;
+            }
+
+            // Dibujar la comida
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x, food.y, box, box);
+
+            // Calcular la nueva posición de la cabeza
+            let snakeX = snake.head.x;
+            let snakeY = snake.head.y;
+
+            if (direction === 'LEFT') snakeX -= box;
+            if (direction === 'UP') snakeY -= box;
+            if (direction === 'RIGHT') snakeX += box;
+            if (direction === 'DOWN') snakeY += box;
+
+            // Comprobar si la serpiente come la comida
+            if (snakeX === food.x && snakeY === food.y) {
+                food = {
+                    x: Math.floor(Math.random() * 20) * box,
+                    y: Math.floor(Math.random() * 20) * box
+                };
+            } else {
+                snake.removeTail();
+            }
+
+            const newHead = new Node(snakeX, snakeY);
+
+            // Comprobar colisiones
+            if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(game);
+                alert('Game Over!');
+            }
+
+            snake.addHead(newHead.x, newHead.y);
+
+            // Mostrar el puntaje
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText('Score: ' + (snake.length - 1), 10, 20);
+        }
+
+        function collision(head, snake) {
+            let current = snake.head;
+            while (current) {
+                if (head.x === current.x && head.y === current.y) {
+                    return true;
+                }
+                current = current.next;
+            }
+            return false;
+        }
+
+        let game = setInterval(draw, 100);
+    </script>
+</body>
+</html>
